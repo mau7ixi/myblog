@@ -1,0 +1,733 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss  xmlns:atom="http://www.w3.org/2005/Atom" 
+      xmlns:media="http://search.yahoo.com/mrss/" 
+      xmlns:content="http://purl.org/rss/1.0/modules/content/" 
+      xmlns:dc="http://purl.org/dc/elements/1.1/" 
+      version="2.0">
+<channel>
+<title>myblog</title>
+<link>https://your-website-url.example.com/</link>
+<atom:link href="https://your-website-url.example.com/index.xml" rel="self" type="application/rss+xml"/>
+<description>A blog built with Quarto</description>
+<generator>quarto-1.8.26</generator>
+<lastBuildDate>Sat, 22 Nov 2025 00:00:00 GMT</lastBuildDate>
+<item>
+  <title>Monitoramento de Frota de Ônibus</title>
+  <dc:creator>Maurício 225059</dc:creator>
+  <link>https://your-website-url.example.com/posts/Monitoramento_de_frota_de_Ônibus/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>Nesta atividade apresenta um sistema simples de monitoramento de ônibus usando a API Olho Vivo da SPTrans. O programa obtém as paradas e a localização em tempo real da linha escolhida e exibe tudo em um mapa interativo.</p>
+<div id="430eea82" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> requests</span>
+<span id="cb1-2"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> folium</span>
+<span id="cb1-3"></span>
+<span id="cb1-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># token e base da API</span></span>
+<span id="cb1-5">TOKEN <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"b3745755617c6a4c7487c1a93d2cfae0968e31fdf7e427395078bb2237987c5f"</span></span>
+<span id="cb1-6">BASE_URL <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"http://api.olhovivo.sptrans.com.br/v2.1"</span></span>
+<span id="cb1-7"></span>
+<span id="cb1-8"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># linha usada</span></span>
+<span id="cb1-9">LINHA <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"875A-10"</span></span>
+<span id="cb1-10"></span>
+<span id="cb1-11"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># login</span></span>
+<span id="cb1-12">s <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> requests.Session()</span>
+<span id="cb1-13">s.post(<span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>BASE_URL<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">/Login/Autenticar?token=</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>TOKEN<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span>
+<span id="cb1-14"></span>
+<span id="cb1-15"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># busca a linha</span></span>
+<span id="cb1-16">resp_linha <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> s.get(<span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>BASE_URL<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">/Linha/Buscar?termosBusca=</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>LINHA<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>).json()</span>
+<span id="cb1-17"></span>
+<span id="cb1-18"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># se não achar a linha</span></span>
+<span id="cb1-19"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">not</span> resp_linha:</span>
+<span id="cb1-20">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"A API não encontrou essa linha."</span>)</span>
+<span id="cb1-21">    exit()</span>
+<span id="cb1-22"></span>
+<span id="cb1-23">codigo_linha <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> resp_linha[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>][<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cl"</span>]</span>
+<span id="cb1-24"></span>
+<span id="cb1-25"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># busca paradas da linha</span></span>
+<span id="cb1-26">paradas <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> s.get(</span>
+<span id="cb1-27">    <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>BASE_URL<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">/Parada/BuscarParadasPorLinha?codigoLinha=</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>codigo_linha<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span></span>
+<span id="cb1-28">).json()</span>
+<span id="cb1-29"></span>
+<span id="cb1-30"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># se não achar paradas</span></span>
+<span id="cb1-31"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">not</span> paradas:</span>
+<span id="cb1-32">    <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"A API não retornou paradas para essa linha. Tente outra linha."</span>)</span>
+<span id="cb1-33">    exit()</span>
+<span id="cb1-34"></span>
+<span id="cb1-35"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># busca posição dos ônibus</span></span>
+<span id="cb1-36">pos <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> s.get(<span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>BASE_URL<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">/Posicao?codigoLinha=</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>codigo_linha<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>).json()</span>
+<span id="cb1-37">onibus <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pos.get(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"vs"</span>, [])</span>
+<span id="cb1-38"></span>
+<span id="cb1-39"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># centraliza no primeiro ponto encontrado</span></span>
+<span id="cb1-40">lat_central <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> paradas[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>][<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"py"</span>]</span>
+<span id="cb1-41">lon_central <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> paradas[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>][<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"px"</span>]</span>
+<span id="cb1-42"></span>
+<span id="cb1-43">mapa <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> folium.Map(location<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>[lat_central, lon_central], zoom_start<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">13</span>)</span>
+<span id="cb1-44"></span>
+<span id="cb1-45"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># adiciona paradas (vermelho)</span></span>
+<span id="cb1-46"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> p <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> paradas:</span>
+<span id="cb1-47">    folium.Marker(</span>
+<span id="cb1-48">        location<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>[p[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"py"</span>], p[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"px"</span>]],</span>
+<span id="cb1-49">        icon<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>folium.Icon(color<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"red"</span>),</span>
+<span id="cb1-50">        popup<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>p[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"np"</span>]</span>
+<span id="cb1-51">    ).add_to(mapa)</span>
+<span id="cb1-52"></span>
+<span id="cb1-53"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># adiciona ônibus (azul)</span></span>
+<span id="cb1-54"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> v <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> onibus:</span>
+<span id="cb1-55">    folium.CircleMarker(</span>
+<span id="cb1-56">        location<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>[v[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"py"</span>], v[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"px"</span>]],</span>
+<span id="cb1-57">        radius<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span>,</span>
+<span id="cb1-58">        color<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"blue"</span>,</span>
+<span id="cb1-59">        fill<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">True</span></span>
+<span id="cb1-60">    ).add_to(mapa)</span>
+<span id="cb1-61"></span>
+<span id="cb1-62"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># salva o arquivo</span></span>
+<span id="cb1-63">mapa.save(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"mapa_875A-10.html"</span>)</span>
+<span id="cb1-64"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Mapa gerado: mapa_875A-10.html"</span>)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mapa gerado: mapa_875A-10.html</code></pre>
+</div>
+</div>
+
+
+
+ ]]></description>
+  <category>code</category>
+  <category>onibus</category>
+  <category>frota</category>
+  <category>monitoramento</category>
+  <guid>https://your-website-url.example.com/posts/Monitoramento_de_frota_de_Ônibus/</guid>
+  <pubDate>Sat, 22 Nov 2025 00:00:00 GMT</pubDate>
+  <media:content url="https://your-website-url.example.com/posts/Monitoramento_de_frota_de_Ônibus/ladoempresa2.jpg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>Regressão Linear</title>
+  <dc:creator>Maurício 225059</dc:creator>
+  <link>https://your-website-url.example.com/posts/Regressão_Linear/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>Nesta atividade aplico a regressão linear para analisar dados e identificar a tendência entre as variáveis fornecidas. A técnica permite criar um modelo simples capaz de prever valores futuros a partir do comportamento observado nos dados.</p>
+
+
+
+ ]]></description>
+  <category>plotly</category>
+  <category>code</category>
+  <category>txt</category>
+  <guid>https://your-website-url.example.com/posts/Regressão_Linear/</guid>
+  <pubDate>Sat, 22 Nov 2025 00:00:00 GMT</pubDate>
+  <media:content url="https://your-website-url.example.com/posts/Regressão_Linear/regression-sum-of-squares.jpg" medium="image" type="image/jpeg"/>
+</item>
+<item>
+  <title>Cotação do Dólar</title>
+  <dc:creator>Maurício 225059</dc:creator>
+  <link>https://your-website-url.example.com/posts/Cotação_do_dolar/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>Esta atividade desenvolve uma rotina em Python que recebe uma data no formato <strong>“MMYYYY”</strong>, consulta a cotação diária do dólar na API PTAX do Banco Central e trata dias sem cotação usando o valor anterior. O resultado final é um <strong>gráfico de linha em Plotly</strong> mostrando a variação do dólar ao longo do mês informado.</p>
+<div id="9aad9e62" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> requests</span>
+<span id="cb1-2"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> pandas <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">as</span> pd</span>
+<span id="cb1-3"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> calendar</span>
+<span id="cb1-4"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> datetime <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> datetime</span>
+<span id="cb1-5"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> plotly.express <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">as</span> px</span>
+<span id="cb1-6"></span>
+<span id="cb1-7"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> grafico_dolar_por_periodo(mmyyyy: <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">str</span>):</span>
+<span id="cb1-8">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">"""</span></span>
+<span id="cb1-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">    Função que recebe uma string no formato MMYYYY e gera um gráfico</span></span>
+<span id="cb1-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">    com a cotação diária do dólar daquele mês, usando dados da API PTAX.</span></span>
+<span id="cb1-11"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">    """</span></span>
+<span id="cb1-12"></span>
+<span id="cb1-13">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Aqui eu converto o valor recebido (ex: "092010") para uma data real.</span></span>
+<span id="cb1-14">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#    O datetime.strptime sempre cria a data no primeiro dia do mês.</span></span>
+<span id="cb1-15">    data_inicial <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> datetime.strptime(mmyyyy, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"%m%Y"</span>)</span>
+<span id="cb1-16"></span>
+<span id="cb1-17">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Como precisamos também da data final, eu descubro quantos dias o mês tem.</span></span>
+<span id="cb1-18">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#    O calendar.monthrange retorna uma tupla e o segundo valor é o último dia.</span></span>
+<span id="cb1-19">    ultimo_dia <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> calendar.monthrange(data_inicial.year, data_inicial.month)[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]</span>
+<span id="cb1-20"></span>
+<span id="cb1-21">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Agora crio a data final substituindo o dia pelo último dia encontrado acima.</span></span>
+<span id="cb1-22">    data_final <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> data_inicial.replace(day<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>ultimo_dia)</span>
+<span id="cb1-23"></span>
+<span id="cb1-24">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># A API do Banco Central exige que as datas estejam no formato MM-DD-YYYY,</span></span>
+<span id="cb1-25">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#    então faço essa conversão aqui.</span></span>
+<span id="cb1-26">    di <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> data_inicial.strftime(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"%m-</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%d</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">-%Y"</span>)</span>
+<span id="cb1-27">    df <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> data_final.strftime(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"%m-</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%d</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">-%Y"</span>)</span>
+<span id="cb1-28"></span>
+<span id="cb1-29">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Montando a URL da API PTAX com a data inicial e final.</span></span>
+<span id="cb1-30">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#    Essa URL retorna todas as cotações do dólar dentro do período informado.</span></span>
+<span id="cb1-31">    url <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> (</span>
+<span id="cb1-32">        <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/"</span></span>
+<span id="cb1-33">        <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"CotacaoDolarPeriodo(dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)"</span></span>
+<span id="cb1-34">        <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"?@dataInicial='</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>di<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'&amp;@dataFinalCotacao='</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>df<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'"</span></span>
+<span id="cb1-35">        <span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"&amp;$top=1000&amp;$format=json"</span></span>
+<span id="cb1-36">    )</span>
+<span id="cb1-37"></span>
+<span id="cb1-38">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Faço a requisição para a API e transformo o resultado em JSON.</span></span>
+<span id="cb1-39">    resposta <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> requests.get(url).json()</span>
+<span id="cb1-40"></span>
+<span id="cb1-41">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Os dados que realmente importam para nós estão dentro de "value".</span></span>
+<span id="cb1-42">    df_cot <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.DataFrame(resposta[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"value"</span>])</span>
+<span id="cb1-43"></span>
+<span id="cb1-44">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># A API retorna as datas em formato de texto, então converto para datetime.</span></span>
+<span id="cb1-45">    df_cot[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"datahora"</span>] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.to_datetime(df_cot[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"dataHoraCotacao"</span>])</span>
+<span id="cb1-46"></span>
+<span id="cb1-47">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Ordeno tudo por data/hora para garantir a organização correta.</span></span>
+<span id="cb1-48">    df_cot <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> df_cot.sort_values(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"datahora"</span>)</span>
+<span id="cb1-49"></span>
+<span id="cb1-50">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Extraio só a parte da data (tirando a hora), pois queremos valores por dia.</span></span>
+<span id="cb1-51">    df_cot[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"data"</span>] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> df_cot[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"datahora"</span>].dt.date</span>
+<span id="cb1-52"></span>
+<span id="cb1-53">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Em alguns dias existem várias cotações. Aqui tiro a média do dia.</span></span>
+<span id="cb1-54">    df_final <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> df_cot.groupby(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"data"</span>)[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cotacaoVenda"</span>].mean().reset_index()</span>
+<span id="cb1-55"></span>
+<span id="cb1-56">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Agora gero todas as datas do mês, incluindo finais de semana e feriados,</span></span>
+<span id="cb1-57">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#     porque nesses dias não tem cotação e precisamos preencher depois.</span></span>
+<span id="cb1-58">    todas_datas <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.date_range(start<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>data_inicial, end<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>data_final)</span>
+<span id="cb1-59">    df_completo <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.DataFrame({<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"data"</span>: todas_datas.date})</span>
+<span id="cb1-60"></span>
+<span id="cb1-61">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Junto as datas completas com os dados reais da API.</span></span>
+<span id="cb1-62">    df_merged <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> df_completo.merge(df_final, on<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"data"</span>, how<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"left"</span>)</span>
+<span id="cb1-63"></span>
+<span id="cb1-64">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Preenchendo as datas que ficaram sem valor (feriados e domingos).</span></span>
+<span id="cb1-65">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#     O método ffill() copia o valor do dia anterior, que é o que o professor pediu.</span></span>
+<span id="cb1-66">    df_merged[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cotacaoVenda"</span>] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> df_merged[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cotacaoVenda"</span>].ffill()</span>
+<span id="cb1-67"></span>
+<span id="cb1-68">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Agora gero o gráfico com o plotly. É um gráfico de linha simples.</span></span>
+<span id="cb1-69">    fig <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> px.line(</span>
+<span id="cb1-70">        df_merged,</span>
+<span id="cb1-71">        x<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"data"</span>,</span>
+<span id="cb1-72">        y<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cotacaoVenda"</span>,</span>
+<span id="cb1-73">        title<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"Cotação diária do Dólar — </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>mmyyyy[:<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>]<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">/</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>mmyyyy[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>:]<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>,</span>
+<span id="cb1-74">        labels<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>{<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"data"</span>: <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Data"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cotacaoVenda"</span>: <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Cotação (R$)"</span>}</span>
+<span id="cb1-75">    )</span>
+<span id="cb1-76"></span>
+<span id="cb1-77">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Exibo o gráfico.</span></span>
+<span id="cb1-78">    fig.show()</span>
+<span id="cb1-79"></span>
+<span id="cb1-80">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Retorno o DataFrame final caso eu queira usar depois para algum relatório.</span></span>
+<span id="cb1-81">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> df_merged</span>
+<span id="cb1-82"></span>
+<span id="cb1-83"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># E por fim, um print para exibir os resultados.</span></span>
+<span id="cb1-84"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(grafico_dolar_por_periodo(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"092010"</span>)</span>
+<span id="cb1-85">)</span></code></pre></div></div>
+<div class="cell-output cell-output-display">
+<div>            <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_SVG"></script><script type="text/javascript">if (window.MathJax && window.MathJax.Hub && window.MathJax.Hub.Config) {window.MathJax.Hub.Config({SVG: {font: "STIX-Web"}});}</script>                <script type="text/javascript">window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.2.0.min.js" integrity="sha256-iZ2u/oU2wf/vDbl/ChcX93WgbBRSBvUO6N413hDz7xM=" crossorigin="anonymous"></script>                <div id="a2cc17bc-e049-40f3-a611-731afb1da20f" class="plotly-graph-div" style="height:525px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("a2cc17bc-e049-40f3-a611-731afb1da20f")) {                    Plotly.newPlot(                        "a2cc17bc-e049-40f3-a611-731afb1da20f",                        [{"hovertemplate":"Data=%{x}\u003cbr\u003eCota\u00e7\u00e3o (R$)=%{y}\u003cextra\u003e\u003c\u002fextra\u003e","legendgroup":"","line":{"color":"#636efa","dash":"solid"},"marker":{"symbol":"circle"},"mode":"lines","name":"","orientation":"v","showlegend":false,"x":["2010-09-01","2010-09-02","2010-09-03","2010-09-04","2010-09-05","2010-09-06","2010-09-07","2010-09-08","2010-09-09","2010-09-10","2010-09-11","2010-09-12","2010-09-13","2010-09-14","2010-09-15","2010-09-16","2010-09-17","2010-09-18","2010-09-19","2010-09-20","2010-09-21","2010-09-22","2010-09-23","2010-09-24","2010-09-25","2010-09-26","2010-09-27","2010-09-28","2010-09-29","2010-09-30"],"xaxis":"x","y":{"dtype":"f8","bdata":"8kHPZtXn+z9EaW\u002fwhcn7P0p7gy9Mpvs\u002fSnuDL0ym+z9Ke4MvTKb7P5OpglFJnfs\u002fk6mCUUmd+z82zTtO0ZH7P02EDU+vlPs\u002fVn2utmJ\u002f+z9Wfa62Yn\u002f7P1Z9rrZif\u002fs\u002fCmgibHh6+z\u002fDZKpgVFL7P9UJaCJsePs\u002fdCSX\u002f5B++z+BBMWPMXf7P4EExY8xd\u002fs\u002fgQTFjzF3+z+WsgxxrIv7P8\u002f3U+Olm\u002fs\u002fdCSX\u002f5B++z\u002ff4AuTqYL7PzEIrBxaZPs\u002fMQisHFpk+z8xCKwcWmT7P1yPwvUoXPs\u002fRdjw9EpZ+z+b5h2n6Ej7P5YhjnVxG\u002fs\u002f"},"yaxis":"y","type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"},"margin":{"b":0,"l":0,"r":0,"t":30}}},"xaxis":{"anchor":"y","domain":[0.0,1.0],"title":{"text":"Data"}},"yaxis":{"anchor":"x","domain":[0.0,1.0],"title":{"text":"Cota\u00e7\u00e3o (R$)"}},"legend":{"tracegroupgap":0},"title":{"text":"Cota\u00e7\u00e3o di\u00e1ria do D\u00f3lar \u2014 09\u002f2010"}},                        {"responsive": true}                    ).then(function(){
+                            
+var gd = document.getElementById('a2cc17bc-e049-40f3-a611-731afb1da20f');
+var x = new MutationObserver(function (mutations, observer) {{
+        var display = window.getComputedStyle(gd).display;
+        if (!display || display === 'none') {{
+            console.log([gd, 'removed!']);
+            Plotly.purge(gd);
+            observer.disconnect();
+        }}
+}});
+
+// Listen for the removal of the full notebook cells
+var notebookContainer = gd.closest('#notebook-container');
+if (notebookContainer) {{
+    x.observe(notebookContainer, {childList: true});
+}}
+
+// Listen for the clearing of the current output cell
+var outputEl = gd.closest('.output');
+if (outputEl) {{
+    x.observe(outputEl, {childList: true});
+}}
+
+                        })                };            </script>        </div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          data  cotacaoVenda
+0   2010-09-01        1.7441
+1   2010-09-02        1.7367
+2   2010-09-03        1.7281
+3   2010-09-04        1.7281
+4   2010-09-05        1.7281
+5   2010-09-06        1.7259
+6   2010-09-07        1.7259
+7   2010-09-08        1.7231
+8   2010-09-09        1.7238
+9   2010-09-10        1.7186
+10  2010-09-11        1.7186
+11  2010-09-12        1.7186
+12  2010-09-13        1.7174
+13  2010-09-14        1.7076
+14  2010-09-15        1.7169
+15  2010-09-16        1.7184
+16  2010-09-17        1.7166
+17  2010-09-18        1.7166
+18  2010-09-19        1.7166
+19  2010-09-20        1.7216
+20  2010-09-21        1.7255
+21  2010-09-22        1.7184
+22  2010-09-23        1.7194
+23  2010-09-24        1.7120
+24  2010-09-25        1.7120
+25  2010-09-26        1.7120
+26  2010-09-27        1.7100
+27  2010-09-28        1.7093
+28  2010-09-29        1.7053
+29  2010-09-30        1.6942</code></pre>
+</div>
+</div>
+
+
+
+ ]]></description>
+  <category>api</category>
+  <category>code</category>
+  <category>dolar</category>
+  <guid>https://your-website-url.example.com/posts/Cotação_do_dolar/</guid>
+  <pubDate>Sat, 22 Nov 2025 00:00:00 GMT</pubDate>
+  <media:content url="https://your-website-url.example.com/posts/Cotação_do_dolar/real_dolars.jpg" medium="image" type="image/jpeg"/>
+</item>
+</channel>
+</rss>

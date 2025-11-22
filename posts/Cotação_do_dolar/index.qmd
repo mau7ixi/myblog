@@ -1,0 +1,100 @@
+---
+title: "Cotação do Dólar"
+author: "Maurício 225059"
+date: "2025-11-22"
+categories: [api, code, dolar]
+image: "real_dolars.jpg"
+jupyter: python3
+---
+
+Esta atividade desenvolve uma rotina em Python que recebe uma data no formato **“MMYYYY”**, consulta a cotação diária do dólar na API PTAX do Banco Central e trata dias sem cotação usando o valor anterior.
+O resultado final é um **gráfico de linha em Plotly** mostrando a variação do dólar ao longo do mês informado.
+
+```{python}
+
+import requests
+import pandas as pd
+import calendar
+from datetime import datetime
+import plotly.express as px
+
+def grafico_dolar_por_periodo(mmyyyy: str):
+    """
+    Função que recebe uma string no formato MMYYYY e gera um gráfico
+    com a cotação diária do dólar daquele mês, usando dados da API PTAX.
+    """
+
+    # Aqui eu converto o valor recebido (ex: "092010") para uma data real.
+    #    O datetime.strptime sempre cria a data no primeiro dia do mês.
+    data_inicial = datetime.strptime(mmyyyy, "%m%Y")
+
+    # Como precisamos também da data final, eu descubro quantos dias o mês tem.
+    #    O calendar.monthrange retorna uma tupla e o segundo valor é o último dia.
+    ultimo_dia = calendar.monthrange(data_inicial.year, data_inicial.month)[1]
+
+    # Agora crio a data final substituindo o dia pelo último dia encontrado acima.
+    data_final = data_inicial.replace(day=ultimo_dia)
+
+    # A API do Banco Central exige que as datas estejam no formato MM-DD-YYYY,
+    #    então faço essa conversão aqui.
+    di = data_inicial.strftime("%m-%d-%Y")
+    df = data_final.strftime("%m-%d-%Y")
+
+    # Montando a URL da API PTAX com a data inicial e final.
+    #    Essa URL retorna todas as cotações do dólar dentro do período informado.
+    url = (
+        f"https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/"
+        f"CotacaoDolarPeriodo(dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)"
+        f"?@dataInicial='{di}'&@dataFinalCotacao='{df}'"
+        f"&$top=1000&$format=json"
+    )
+
+    # Faço a requisição para a API e transformo o resultado em JSON.
+    resposta = requests.get(url).json()
+
+    # Os dados que realmente importam para nós estão dentro de "value".
+    df_cot = pd.DataFrame(resposta["value"])
+
+    # A API retorna as datas em formato de texto, então converto para datetime.
+    df_cot["datahora"] = pd.to_datetime(df_cot["dataHoraCotacao"])
+
+    # Ordeno tudo por data/hora para garantir a organização correta.
+    df_cot = df_cot.sort_values("datahora")
+
+    # Extraio só a parte da data (tirando a hora), pois queremos valores por dia.
+    df_cot["data"] = df_cot["datahora"].dt.date
+
+    # Em alguns dias existem várias cotações. Aqui tiro a média do dia.
+    df_final = df_cot.groupby("data")["cotacaoVenda"].mean().reset_index()
+
+    # Agora gero todas as datas do mês, incluindo finais de semana e feriados,
+    #     porque nesses dias não tem cotação e precisamos preencher depois.
+    todas_datas = pd.date_range(start=data_inicial, end=data_final)
+    df_completo = pd.DataFrame({"data": todas_datas.date})
+
+    # Junto as datas completas com os dados reais da API.
+    df_merged = df_completo.merge(df_final, on="data", how="left")
+
+    # Preenchendo as datas que ficaram sem valor (feriados e domingos).
+    #     O método ffill() copia o valor do dia anterior, que é o que o professor pediu.
+    df_merged["cotacaoVenda"] = df_merged["cotacaoVenda"].ffill()
+
+    # Agora gero o gráfico com o plotly. É um gráfico de linha simples.
+    fig = px.line(
+        df_merged,
+        x="data",
+        y="cotacaoVenda",
+        title=f"Cotação diária do Dólar — {mmyyyy[:2]}/{mmyyyy[2:]}",
+        labels={"data": "Data", "cotacaoVenda": "Cotação (R$)"}
+    )
+
+    # Exibo o gráfico.
+    fig.show()
+
+    # Retorno o DataFrame final caso eu queira usar depois para algum relatório.
+    return df_merged
+
+# E por fim, um print para exibir os resultados.
+print(grafico_dolar_por_periodo("092010")
+)
+```

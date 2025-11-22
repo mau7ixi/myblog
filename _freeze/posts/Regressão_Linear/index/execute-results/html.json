@@ -1,0 +1,12 @@
+{
+  "hash": "dff534802d32dd91324d865cc0c8d5ab",
+  "result": {
+    "engine": "jupyter",
+    "markdown": "---\ntitle: \"Regressão Linear\"\nauthor: \"Maurício 225059\"\ndate: \"2025-11-22\"\ncategories: [plotly, code, txt]\nimage: \"regression-sum-of-squares.jpg\"\njupyter: python3\n---\n\nNesta atividade aplico a regressão linear para analisar dados e identificar a tendência entre as variáveis fornecidas. A técnica permite criar um modelo simples capaz de prever valores futuros a partir do comportamento observado nos dados.\n\n",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [],
+    "includes": {}
+  }
+}

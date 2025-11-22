@@ -1,0 +1,79 @@
+---
+title: "Monitoramento de Frota de Ônibus"
+author: "Maurício 225059"
+date: "2025-11-22"
+categories: [code, onibus, frota, monitoramento]
+image: "ladoempresa2.jpg"
+jupyter: python3
+---
+
+Nesta atividade apresenta um sistema simples de monitoramento de ônibus usando a API Olho Vivo da SPTrans. O programa obtém as paradas e a localização em tempo real da linha escolhida e exibe tudo em um mapa interativo.
+
+```{python}
+
+import requests
+import folium
+
+# token e base da API
+TOKEN = "b3745755617c6a4c7487c1a93d2cfae0968e31fdf7e427395078bb2237987c5f"
+BASE_URL = "http://api.olhovivo.sptrans.com.br/v2.1"
+
+# linha usada
+LINHA = "875A-10"
+
+# login
+s = requests.Session()
+s.post(f"{BASE_URL}/Login/Autenticar?token={TOKEN}")
+
+# busca a linha
+resp_linha = s.get(f"{BASE_URL}/Linha/Buscar?termosBusca={LINHA}").json()
+
+# se não achar a linha
+if not resp_linha:
+    print("A API não encontrou essa linha.")
+    exit()
+
+codigo_linha = resp_linha[0]["cl"]
+
+# busca paradas da linha
+paradas = s.get(
+    f"{BASE_URL}/Parada/BuscarParadasPorLinha?codigoLinha={codigo_linha}"
+).json()
+
+# se não achar paradas
+if not paradas:
+    print("A API não retornou paradas para essa linha. Tente outra linha.")
+    exit()
+
+# busca posição dos ônibus
+pos = s.get(f"{BASE_URL}/Posicao?codigoLinha={codigo_linha}").json()
+onibus = pos.get("vs", [])
+
+# centraliza no primeiro ponto encontrado
+lat_central = paradas[0]["py"]
+lon_central = paradas[0]["px"]
+
+mapa = folium.Map(location=[lat_central, lon_central], zoom_start=13)
+
+# adiciona paradas (vermelho)
+for p in paradas:
+    folium.Marker(
+        location=[p["py"], p["px"]],
+        icon=folium.Icon(color="red"),
+        popup=p["np"]
+    ).add_to(mapa)
+
+# adiciona ônibus (azul)
+for v in onibus:
+    folium.CircleMarker(
+        location=[v["py"], v["px"]],
+        radius=7,
+        color="blue",
+        fill=True
+    ).add_to(mapa)
+
+# salva o arquivo
+mapa.save("mapa_875A-10.html")
+print("Mapa gerado: mapa_875A-10.html")
+
+```

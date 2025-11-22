@@ -1,0 +1,12 @@
+{
+  "hash": "3f07deb0dd1cdeb586500d157d94eaaf",
+  "result": {
+    "engine": "jupyter",
+    "markdown": "---\ntitle: \"Monitoramento de Frota de Ônibus\"\nauthor: \"Maurício 225059\"\ndate: \"2025-11-22\"\ncategories: [code, onibus, frota, monitoramento]\nimage: \"ladoempresa2.jpg\"\njupyter: python3\n---\n\nNesta atividade apresenta um sistema simples de monitoramento de ônibus usando a API Olho Vivo da SPTrans. O programa obtém as paradas e a localização em tempo real da linha escolhida e exibe tudo em um mapa interativo.\n\n::: {#430eea82 .cell execution_count=1}\n``` {.python .cell-code}\nimport requests\nimport folium\n\n# token e base da API\nTOKEN = \"b3745755617c6a4c7487c1a93d2cfae0968e31fdf7e427395078bb2237987c5f\"\nBASE_URL = \"http://api.olhovivo.sptrans.com.br/v2.1\"\n\n# linha usada\nLINHA = \"875A-10\"\n\n# login\ns = requests.Session()\ns.post(f\"{BASE_URL}/Login/Autenticar?token={TOKEN}\")\n\n# busca a linha\nresp_linha = s.get(f\"{BASE_URL}/Linha/Buscar?termosBusca={LINHA}\").json()\n\n# se não achar a linha\nif not resp_linha:\n    print(\"A API não encontrou essa linha.\")\n    exit()\n\ncodigo_linha = resp_linha[0][\"cl\"]\n\n# busca paradas da linha\nparadas = s.get(\n    f\"{BASE_URL}/Parada/BuscarParadasPorLinha?codigoLinha={codigo_linha}\"\n).json()\n\n# se não achar paradas\nif not paradas:\n    print(\"A API não retornou paradas para essa linha. Tente outra linha.\")\n    exit()\n\n# busca posição dos ônibus\npos = s.get(f\"{BASE_URL}/Posicao?codigoLinha={codigo_linha}\").json()\nonibus = pos.get(\"vs\", [])\n\n# centraliza no primeiro ponto encontrado\nlat_central = paradas[0][\"py\"]\nlon_central = paradas[0][\"px\"]\n\nmapa = folium.Map(location=[lat_central, lon_central], zoom_start=13)\n\n# adiciona paradas (vermelho)\nfor p in paradas:\n    folium.Marker(\n        location=[p[\"py\"], p[\"px\"]],\n        icon=folium.Icon(color=\"red\"),\n        popup=p[\"np\"]\n    ).add_to(mapa)\n\n# adiciona ônibus (azul)\nfor v in onibus:\n    folium.CircleMarker(\n        location=[v[\"py\"], v[\"px\"]],\n        radius=7,\n        color=\"blue\",\n        fill=True\n    ).add_to(mapa)\n\n# salva o arquivo\nmapa.save(\"mapa_875A-10.html\")\nprint(\"Mapa gerado: mapa_875A-10.html\")\n```\n\n::: {.cell-output .cell-output-stdout}\n```\nMapa gerado: mapa_875A-10.html\n```\n:::\n:::\n\n\n",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [],
+    "includes": {}
+  }
+}
