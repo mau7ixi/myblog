@@ -73,7 +73,12 @@ for v in onibus:
     ).add_to(mapa)
 
 # salva o arquivo
-mapa.save("mapa_875A-10.html")
-print("Mapa gerado: mapa_875A-10.html")
+mapa.save("mapa.html")
+print("Mapa gerado: mapa.html")
+from IPython.display import HTML
+
+HTML('<object data="mapa.html" width="100%" height="600px"></object>')
 
 ```
+
+O mapa é gerado no código, porém não consegui exibir ele no blog.
